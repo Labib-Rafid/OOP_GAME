@@ -14,13 +14,14 @@ import com.badlogic.gdx.utils.TimeUtils;
 import java.util.Iterator;
 
 public class Main extends ApplicationAdapter {
-    private Texture playerTexture, groundTexture, obstacleTexture;
+    private Texture playerTexture, backgroundTexture, obstacleTexture;
     private Batch batch;
     private Rectangle player;
     private Array<Rectangle> obstacles;
     private float gravity = -800f, velocityY = 0;
     private long lastObstacleTime;
     private boolean isJumping = false;
+    private float backgroundX = 0;
 
     @Override
     public void create() {
@@ -28,10 +29,10 @@ public class Main extends ApplicationAdapter {
 
         // Load Textures
         playerTexture = new Texture("player1.png");
-        groundTexture = new Texture("41524.jpg");
+        backgroundTexture = new Texture("41524.jpg");
         obstacleTexture = new Texture("neon_rectangle.jpg");
 
-        // Player properties
+        // Player stays at fixed horizontal position
         player = new Rectangle(100, 100, 50, 50);
 
         // Obstacles
@@ -50,19 +51,13 @@ public class Main extends ApplicationAdapter {
         // Clear screen
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        // Handle Input
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && player.x > 0) {
-            player.x -= 200 * Gdx.graphics.getDeltaTime();
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && player.x < Gdx.graphics.getWidth() - player.width) {
-            player.x += 200 * Gdx.graphics.getDeltaTime();
-        }
+        // Handle jump input
         if (Gdx.input.isKeyPressed(Input.Keys.UP) && !isJumping) {
             velocityY = 400;
             isJumping = true;
         }
 
-        // Apply Gravity
+        // Apply gravity
         velocityY += gravity * Gdx.graphics.getDeltaTime();
         player.y += velocityY * Gdx.graphics.getDeltaTime();
 
@@ -72,12 +67,18 @@ public class Main extends ApplicationAdapter {
             isJumping = false;
         }
 
-        // Spawn Obstacles
+        // Scroll background
+        backgroundX -= 100 * Gdx.graphics.getDeltaTime();
+        if (backgroundX <= -Gdx.graphics.getWidth()) {
+            backgroundX = 0;
+        }
+
+        // Spawn obstacles periodically
         if (TimeUtils.nanoTime() - lastObstacleTime > 1000000000) {
             spawnObstacle();
         }
 
-        // Move Obstacles
+        // Move obstacles left
         for (Iterator<Rectangle> iter = obstacles.iterator(); iter.hasNext(); ) {
             Rectangle obstacle = iter.next();
             obstacle.x -= 300 * Gdx.graphics.getDeltaTime();
@@ -93,12 +94,17 @@ public class Main extends ApplicationAdapter {
 
         // Draw everything
         batch.begin();
-        batch.draw(groundTexture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
+        // Draw scrolling background
+        batch.draw(backgroundTexture, backgroundX, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        batch.draw(backgroundTexture, backgroundX + Gdx.graphics.getWidth(), 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
+        // Draw player and obstacles
         batch.draw(playerTexture, player.x, player.y, player.width, player.height);
         for (Rectangle obstacle : obstacles) {
             batch.draw(obstacleTexture, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
         }
+
         batch.end();
     }
 
@@ -106,7 +112,7 @@ public class Main extends ApplicationAdapter {
     public void dispose() {
         batch.dispose();
         playerTexture.dispose();
-        groundTexture.dispose();
+        backgroundTexture.dispose();
         obstacleTexture.dispose();
     }
 }
