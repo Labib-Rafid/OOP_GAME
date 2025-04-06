@@ -27,9 +27,9 @@ public class Main extends ApplicationAdapter {
         batch = new SpriteBatch();
 
         // Load Textures
-        playerTexture = new Texture("508.jpg");
-        groundTexture = new Texture("508.jpg");
-        obstacleTexture = new Texture("508.jpg");
+        playerTexture = new Texture("player1.png");
+        groundTexture = new Texture("41524.jpg");
+        obstacleTexture = new Texture("neon_rectangle.jpg");
 
         // Player properties
         player = new Rectangle(100, 100, 50, 50);
@@ -93,7 +93,8 @@ public class Main extends ApplicationAdapter {
 
         // Draw everything
         batch.begin();
-        batch.draw(groundTexture, 0, 0, Gdx.graphics.getWidth(), 100);
+        batch.draw(groundTexture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
         batch.draw(playerTexture, player.x, player.y, player.width, player.height);
         for (Rectangle obstacle : obstacles) {
             batch.draw(obstacleTexture, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
