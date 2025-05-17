@@ -5,103 +5,137 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
 
 import java.util.Iterator;
 
-public class Main extends ApplicationAdapter {
-    private Texture playerTexture, backgroundTexture, obstacleTexture;
+public class Main extends ApplicationAdapter{
+    private Texture runningManSheet, backgroundTexture, obstacleTexture;
     private Batch batch;
     private Rectangle player;
     private Array<Rectangle> obstacles;
     private float gravity = -800f, velocityY = 0;
     private long lastObstacleTime;
     private boolean isJumping = false;
+    private boolean isCrouching = false;
     private float backgroundX = 0;
 
+    private float normalHeight = 100;
+    private float crouchHeight = 60;
+
+    private Animation<TextureRegion> runAnimation;
+    private float stateTime = 0f;
+
     @Override
-    public void create() {
+    public void create(){
         batch = new SpriteBatch();
 
-        // Load Textures
-        playerTexture = new Texture("player1.png");
-        backgroundTexture = new Texture("41524.jpg");
+        runningManSheet = new Texture("running_man.jpg");
+        backgroundTexture = new Texture("white_back.png");
         obstacleTexture = new Texture("neon_rectangle.jpg");
 
-        // Player stays at fixed horizontal position
-        player = new Rectangle(100, 100, 50, 50);
+        int frameCols = 3;
+        int frameRows = 2;
 
-        // Obstacles
+        int frameWidth = runningManSheet.getWidth() / frameCols;
+        int frameHeight = runningManSheet.getHeight() / frameRows;
+
+        TextureRegion[][] tmp = TextureRegion.split(runningManSheet, frameWidth, frameHeight);
+        TextureRegion[] runFrames = new TextureRegion[frameCols * frameRows];
+
+        int index = 0;
+        for (int row = 0; row < frameRows; row++) {
+            for (int col = 0; col < frameCols; col++) {
+                runFrames[index++] = tmp[row][col];
+            }
+        }
+
+        runAnimation = new Animation<TextureRegion>(0.1f, runFrames);
+        stateTime = 0f;
+
+        player = new Rectangle(100, 100, 60, normalHeight);
         obstacles = new Array<>();
         spawnObstacle();
     }
 
-    private void spawnObstacle() {
-        Rectangle obstacle = new Rectangle(Gdx.graphics.getWidth(), 100, 50, 50);
+    private void spawnObstacle(){
+        Rectangle obstacle;
+        if(Math.random() < 0.5){
+            obstacle = new Rectangle(Gdx.graphics.getWidth(), 100, 50, 50); // ground
+        } else{
+            obstacle = new Rectangle(Gdx.graphics.getWidth(), 180, 50, 50); // head-height
+        }
         obstacles.add(obstacle);
         lastObstacleTime = TimeUtils.nanoTime();
     }
 
     @Override
-    public void render() {
-        // Clear screen
+    public void render(){
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        // Handle jump input
-        if (Gdx.input.isKeyPressed(Input.Keys.UP) && !isJumping) {
+        if(Gdx.input.isKeyPressed(Input.Keys.UP) && !isJumping && !isCrouching){
             velocityY = 400;
             isJumping = true;
         }
 
-        // Apply gravity
+        if(Gdx.input.isKeyPressed(Input.Keys.DOWN) && !isJumping){
+            if(!isCrouching){
+                isCrouching = true;
+                player.height = crouchHeight;
+            }
+        }else{
+            if(isCrouching){
+                isCrouching = false;
+                player.height = normalHeight;
+            }
+        }
+
         velocityY += gravity * Gdx.graphics.getDeltaTime();
         player.y += velocityY * Gdx.graphics.getDeltaTime();
 
-        // Prevent falling below ground
-        if (player.y < 100) {
+        if(player.y < 100){
             player.y = 100;
             isJumping = false;
         }
 
-        // Scroll background
         backgroundX -= 100 * Gdx.graphics.getDeltaTime();
-        if (backgroundX <= -Gdx.graphics.getWidth()) {
+        if(backgroundX <= -Gdx.graphics.getWidth()){
             backgroundX = 0;
         }
 
-        // Spawn obstacles periodically
-        if (TimeUtils.nanoTime() - lastObstacleTime > 1000000000) {
+        if(TimeUtils.nanoTime() - lastObstacleTime > 1000000000){
             spawnObstacle();
         }
 
-        // Move obstacles left
-        for (Iterator<Rectangle> iter = obstacles.iterator(); iter.hasNext(); ) {
+        for(Iterator<Rectangle> iter = obstacles.iterator(); iter.hasNext(); ){
             Rectangle obstacle = iter.next();
             obstacle.x -= 300 * Gdx.graphics.getDeltaTime();
-            if (obstacle.x + obstacle.width < 0) iter.remove();
+            if(obstacle.x + obstacle.width < 0) iter.remove();
 
-            // Collision detection
-            if (obstacle.overlaps(player)) {
+            if(obstacle.overlaps(player)){
                 System.out.println("Game Over!");
                 dispose();
                 return;
             }
         }
 
-        // Draw everything
+        stateTime += Gdx.graphics.getDeltaTime();
+        TextureRegion currentFrame = runAnimation.getKeyFrame(stateTime, true);
+
         batch.begin();
 
-        // Draw scrolling background
         batch.draw(backgroundTexture, backgroundX, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         batch.draw(backgroundTexture, backgroundX + Gdx.graphics.getWidth(), 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
-        // Draw player and obstacles
-        batch.draw(playerTexture, player.x, player.y, player.width, player.height);
-        for (Rectangle obstacle : obstacles) {
+        batch.draw(currentFrame, player.x, player.y, player.width, player.height);
+
+        for(Rectangle obstacle : obstacles){
             batch.draw(obstacleTexture, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
         }
 
@@ -109,9 +143,9 @@ public class Main extends ApplicationAdapter {
     }
 
     @Override
-    public void dispose() {
+    public void dispose(){
         batch.dispose();
-        playerTexture.dispose();
+        runningManSheet.dispose();
         backgroundTexture.dispose();
         obstacleTexture.dispose();
     }
