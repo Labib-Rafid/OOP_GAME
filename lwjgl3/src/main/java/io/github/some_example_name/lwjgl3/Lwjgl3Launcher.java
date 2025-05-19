@@ -18,7 +18,7 @@ public class Lwjgl3Launcher {
         configuration.setTitle("Temple Run Game");
         configuration.useVsync(true);
         configuration.setForegroundFPS(60);
-        configuration.setWindowedMode(640, 480);
+        configuration.setWindowedMode(1080, 680);
         return configuration;
     }
 }

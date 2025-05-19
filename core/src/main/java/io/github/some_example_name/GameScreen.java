@@ -1,9 +1,4 @@
-//package com.mygdx.templerun;
 package io.github.some_example_name;
-import io.github.some_example_name.Main;
-//package io.github.some_example_name;
-
-
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -21,157 +16,223 @@ import com.badlogic.gdx.utils.TimeUtils;
 
 import java.util.Iterator;
 
-public class GameScreen implements Screen {
-    final Main game;
-    private Texture runningManSheet, backgroundTexture, obstacleTexture;
-    private Batch batch;
-    private Rectangle player;
-    private Array<Rectangle> obstacles;
-    private float gravity = -800f, velocityY = 0;
-    private long lastObstacleTime;
-    private boolean isJumping = false;
-    private boolean isCrouching = false;
-    private float backgroundX = 0;
-    private float normalHeight = 100;
-    private float crouchHeight = 60;
+abstract class Entity {
+    protected Rectangle rect;
 
+    public Entity(float x, float y, float width, float height) {
+        rect = new Rectangle(x, y, width, height);
+    }
+
+    public abstract void update(float delta);
+    public abstract void draw(Batch batch);
+
+    public Rectangle getRectangle() {
+        return rect;
+    }
+}
+
+class Player extends Entity {
+    private float gravity = -800f, velocityY = 0;
+    private boolean isJumping = false, isCrouching = false;
+    private float normalHeight = 100, crouchHeight = 60;
     private Animation<TextureRegion> runAnimation;
     private float stateTime = 0f;
-    private BitmapFont font;
-    private int score = 0;
 
+    public Player(Animation<TextureRegion> animation) {
+        super(100, 100, 60, 100);
+        this.runAnimation = animation;
+    }
+
+    public void jump() {
+        if (!isJumping && !isCrouching) {
+            velocityY = 400;
+            isJumping = true;
+        }
+    }
+
+    public void crouch(boolean down) {
+        if (!isJumping) {
+            if (down && !isCrouching) {
+                isCrouching = true;
+                rect.height = crouchHeight;
+            } else if (!down && isCrouching) {
+                isCrouching = false;
+                rect.height = normalHeight;
+            }
+        }
+    }
+
+    @Override
+    public void update(float delta) {
+        velocityY += gravity * delta;
+        rect.y += velocityY * delta;
+
+        if (rect.y <= 100) {
+            rect.y = 100;
+            velocityY = 0;
+            isJumping = false;
+        }
+
+        stateTime += delta;
+    }
+
+    @Override
+    public void draw(Batch batch) {
+        TextureRegion frame = runAnimation.getKeyFrame(stateTime, true);
+        batch.draw(frame, rect.x, rect.y, rect.width, rect.height);
+    }
+}
+
+class Obstacle extends Entity {
+    private Texture texture;
+
+    public Obstacle(float x, float y, float width, float height, Texture texture) {
+        super(x, y, width, height);
+        this.texture = texture;
+    }
+
+    @Override
+    public void update(float delta) {
+        rect.x -= 300 * delta;
+    }
+
+    @Override
+    public void draw(Batch batch) {
+        batch.draw(texture, rect.x, rect.y, rect.width, rect.height);
+    }
+
+    public boolean isOffScreen() {
+        return rect.x + rect.width < 0;
+    }
+}
+
+public class GameScreen implements Screen {
+    private SpriteBatch batch;
+    private Player player;
+    private Array<Obstacle> obstacles;
+    private Texture obstacleTexture;
+    private Texture backgroundTexture;
+    private float backgroundX = 0;
+    private TextureRegion[] runFrames;
+    private Animation<TextureRegion> runAnimation;
+    private BitmapFont font;
+    private long lastObstacleTime;
+    private int score;
     private float scoreTimer = 0f;
 
-    public GameScreen(final Main game) {
-        this.game = game;
+    final Main game;
 
+    public GameScreen(Main game) {
+        this.game = game;
+    }
+
+    @Override
+    public void show() {
         batch = new SpriteBatch();
 
-        runningManSheet = new Texture("running_man.jpg");
-        backgroundTexture = new Texture("white_back.png");
+        Texture runSheet = new Texture("running_boy_green.png");
+        TextureRegion[][] tmp = TextureRegion.split(runSheet, runSheet.getWidth() / 3, runSheet.getHeight() / 2);
+        runFrames = new TextureRegion[6];
+        int index = 0;
+        for (TextureRegion[] row : tmp)
+            for (TextureRegion frame : row)
+                runFrames[index++] = frame;
+
+        runAnimation = new Animation<>(0.1f, runFrames);
+
+        player = new Player(runAnimation);
+        obstacles = new Array<>();
+
+        backgroundTexture = new Texture("greenBack.png");
         obstacleTexture = new Texture("neon_rectangle.jpg");
+
+        spawnObstacle();
 
         font = new BitmapFont();
         font.getData().setScale(2f);
-
-        int frameCols = 3;
-        int frameRows = 2;
-
-        int frameWidth = runningManSheet.getWidth() / frameCols;
-        int frameHeight = runningManSheet.getHeight() / frameRows;
-
-        TextureRegion[][] tmp = TextureRegion.split(runningManSheet, frameWidth, frameHeight);
-        TextureRegion[] runFrames = new TextureRegion[frameCols * frameRows];
-        int index = 0;
-        for (int row = 0; row < frameRows; row++) {
-            for (int col = 0; col < frameCols; col++) {
-                runFrames[index++] = tmp[row][col];
-            }
-        }
-
-        runAnimation = new Animation<TextureRegion>(0.1f, runFrames);
-        player = new Rectangle(100, 100, 60, normalHeight);
-        obstacles = new Array<>();
-        spawnObstacle();
+        score = 0;
     }
 
     private void spawnObstacle() {
-        Rectangle obstacle;
-        if (Math.random() < 0.5) {
-            obstacle = new Rectangle(Gdx.graphics.getWidth(), 100, 50, 50);
-        } else {
-            obstacle = new Rectangle(Gdx.graphics.getWidth(), 180, 50, 50);
-        }
+        float y = Math.random() < 0.5 ? 100 : 180;
+        Obstacle obstacle = new Obstacle(Gdx.graphics.getWidth(), y, 50, 50, obstacleTexture);
         obstacles.add(obstacle);
         lastObstacleTime = TimeUtils.nanoTime();
+    }
+
+    private void handleInput() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
+            player.jump();
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+            player.crouch(true);
+        } else {
+            player.crouch(false);
+        }
     }
 
     @Override
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        handleInput();
 
-        if (Gdx.input.isKeyPressed(Input.Keys.UP) && !isJumping && !isCrouching) {
-            velocityY = 400;
-            isJumping = true;
-        }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN) && !isJumping) {
-            if (!isCrouching) {
-                isCrouching = true;
-                player.height = crouchHeight;
-            }
-        } else {
-            if (isCrouching) {
-                isCrouching = false;
-                player.height = normalHeight;
-            }
-        }
-
-        velocityY += gravity * delta;
-        player.y += velocityY * delta;
-
-        if (player.y < 100) {
-            player.y = 100;
-            isJumping = false;
-        }
-
+        // Background scrolling
         backgroundX -= 100 * delta;
         if (backgroundX <= -Gdx.graphics.getWidth()) {
             backgroundX = 0;
         }
 
+        player.update(delta);
+
         if (TimeUtils.nanoTime() - lastObstacleTime > 1000000000) {
             spawnObstacle();
         }
 
-        for (Iterator<Rectangle> iter = obstacles.iterator(); iter.hasNext(); ) {
-            Rectangle obstacle = iter.next();
-            obstacle.x -= 300 * delta;
-            if (obstacle.x + obstacle.width < 0) {
+        Iterator<Obstacle> iter = obstacles.iterator();
+        while (iter.hasNext()) {
+            Obstacle obs = iter.next();
+            obs.update(delta);
+            if (obs.isOffScreen()) {
                 iter.remove();
                 score++;
             }
-
-            if (obstacle.overlaps(player)) {
+            if (obs.getRectangle().overlaps(player.getRectangle())) {
                 game.setScreen(new GameOverScreen(game, score));
                 dispose();
                 return;
             }
         }
 
-        // Score increases by 10 every second
+        // Increase score by 10 every second
         scoreTimer += delta;
         while (scoreTimer >= 1.0f) {
             score += 10;
             scoreTimer -= 1.0f;
         }
 
-        stateTime += delta;
-        TextureRegion currentFrame = runAnimation.getKeyFrame(stateTime, true);
-
         batch.begin();
         batch.draw(backgroundTexture, backgroundX, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         batch.draw(backgroundTexture, backgroundX + Gdx.graphics.getWidth(), 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        batch.draw(currentFrame, player.x, player.y, player.width, player.height);
 
-        for (Rectangle obstacle : obstacles) {
-            batch.draw(obstacleTexture, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        player.draw(batch);
+        for (Obstacle obs : obstacles) {
+            obs.draw(batch);
         }
 
-        font.draw(batch, "Score: " + score, 10, Gdx.graphics.getHeight() - 10);
+        font.draw(batch, "Score: " + score, 20, Gdx.graphics.getHeight() - 20);
         batch.end();
     }
 
-    @Override public void resize(int width, int height) {}
-    @Override public void pause() {}
-    @Override public void resume() {}
-    @Override public void hide() {}
-    @Override public void show() {}
-    @Override public void dispose() {
+    @Override public void resize(int width, int height) { }
+    @Override public void pause() { }
+    @Override public void resume() { }
+    @Override public void hide() { }
+
+    @Override
+    public void dispose() {
         batch.dispose();
-        runningManSheet.dispose();
-        backgroundTexture.dispose();
         obstacleTexture.dispose();
+        backgroundTexture.dispose();
         font.dispose();
     }
 }
