@@ -39,7 +39,7 @@ class Player extends Entity {
     private float stateTime = 0f;
 
     public Player(Animation<TextureRegion> animation) {
-        super(100, 100, 60, 100);
+        super(100, 200, 60, 100);
         this.runAnimation = animation;
     }
 
@@ -67,8 +67,8 @@ class Player extends Entity {
         velocityY += gravity * delta;
         rect.y += velocityY * delta;
 
-        if (rect.y <= 100) {
-            rect.y = 100;
+        if (rect.y <= 200) {
+            rect.y = 200;
             velocityY = 0;
             isJumping = false;
         }
@@ -143,7 +143,7 @@ public class GameScreen implements Screen {
         player = new Player(runAnimation);
         obstacles = new Array<>();
 
-        backgroundTexture = new Texture("greenBack.png");
+        backgroundTexture = new Texture("Greenery_Back.png");
         obstacleTexture = new Texture("neon_rectangle.jpg");
 
         spawnObstacle();
@@ -154,7 +154,7 @@ public class GameScreen implements Screen {
     }
 
     private void spawnObstacle() {
-        float y = Math.random() < 0.5 ? 100 : 180;
+        float y = Math.random() < 0.5 ? 200 : 280;
         Obstacle obstacle = new Obstacle(Gdx.graphics.getWidth(), y, 50, 50, obstacleTexture);
         obstacles.add(obstacle);
         lastObstacleTime = TimeUtils.nanoTime();

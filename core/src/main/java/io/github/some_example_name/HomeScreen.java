@@ -43,7 +43,7 @@ public class HomeScreen implements Screen {
 
         batch.begin();
         batch.draw(back, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        fontTitle.draw(batch, "TEMPLE RUN", 150, 400);
+        fontTitle.draw(batch, "ENDLESS RUNNER", 100, 400);
 
         playButton.render(batch);
         instructionsButton.render(batch);
@@ -65,16 +65,16 @@ public class HomeScreen implements Screen {
         }
     }
 
-    @Override public void resize(int width, int height) {}
-    @Override public void pause() {}
-    @Override public void resume() {}
-    @Override public void show() {}
-    @Override public void hide() {}
-    @Override public void dispose() {
-        batch.dispose();
-        font.dispose();
-        fontTitle.dispose();
-        back.dispose();
-        buttonTexture.dispose();
-    }
+        @Override public void resize(int width, int height) {}
+        @Override public void pause() {}
+        @Override public void resume() {}
+        @Override public void show() {}
+        @Override public void hide() {}
+        @Override public void dispose() {
+            batch.dispose();
+            font.dispose();
+            fontTitle.dispose();
+            back.dispose();
+            buttonTexture.dispose();
+        }
 }

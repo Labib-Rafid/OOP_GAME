@@ -15,10 +15,10 @@ public class Lwjgl3Launcher {
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
         Lwjgl3ApplicationConfiguration configuration = new Lwjgl3ApplicationConfiguration();
-        configuration.setTitle("Temple Run Game");
+        configuration.setTitle("ENDLESS RUNNER GAME");
         configuration.useVsync(true);
         configuration.setForegroundFPS(60);
-        configuration.setWindowedMode(1080, 680);
+        configuration.setWindowedMode(1080, 850);
         return configuration;
     }
 }
