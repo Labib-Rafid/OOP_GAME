@@ -18,11 +18,13 @@ public class HomeScreen implements Screen {
         this.game = game;
         batch = new SpriteBatch();
         font = new BitmapFont();
-        fontTitle = new BitmapFont();
         font.setColor(Color.BLACK);
-        fontTitle.setColor(Color.BLACK);
         font.getData().setScale(2);
+
+        fontTitle = new BitmapFont();
+        fontTitle.setColor(Color.BLACK);
         fontTitle.getData().setScale(4);
+
 
         back = new Texture(Gdx.files.internal("HomeBack.png"));
         buttonTexture = new Texture(Gdx.files.internal("white_back.png"));
@@ -70,6 +72,7 @@ public class HomeScreen implements Screen {
         @Override public void resume() {}
         @Override public void show() {}
         @Override public void hide() {}
+
         @Override public void dispose() {
             batch.dispose();
             font.dispose();
