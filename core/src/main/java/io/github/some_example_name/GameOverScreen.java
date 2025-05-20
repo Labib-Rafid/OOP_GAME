@@ -1,7 +1,6 @@
 package io.github.some_example_name;
 
 import com.badlogic.gdx.math.Vector3;
-import io.github.some_example_name.Main;
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.*;

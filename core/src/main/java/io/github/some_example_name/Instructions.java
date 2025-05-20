@@ -38,11 +38,8 @@ public class Instructions implements Screen {
 
         batch.begin();
         batch.draw(back, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-
-        // Title
         fontTitle.draw(batch, "INSTRUCTIONS", 100, 650);
 
-        // Point-by-point instructions
         fontText.draw(batch, "1. Press PLAY to start the game.", 100, 550);
         fontText.draw(batch, "2. Use arrow keys or tap to control the character.", 100, 500);
         fontText.draw(batch, "3. Avoid obstacles and collect coins.", 100, 450);

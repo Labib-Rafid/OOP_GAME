@@ -3,6 +3,7 @@ package io.github.some_example_name;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -149,7 +150,8 @@ public class GameScreen implements Screen {
         spawnObstacle();
 
         font = new BitmapFont();
-        font.getData().setScale(2f);
+        font.setColor(Color.BLACK);
+        font.getData().setScale(3);
         score = 0;
     }
 
@@ -175,8 +177,6 @@ public class GameScreen implements Screen {
     public void render(float delta) {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         handleInput();
-
-        // Background scrolling
         backgroundX -= 100 * delta;
         if (backgroundX <= -Gdx.graphics.getWidth()) {
             backgroundX = 0;
@@ -194,7 +194,7 @@ public class GameScreen implements Screen {
             obs.update(delta);
             if (obs.isOffScreen()) {
                 iter.remove();
-                score++;
+                //score++;
             }
             if (obs.getRectangle().overlaps(player.getRectangle())) {
                 game.setScreen(new GameOverScreen(game, score));
@@ -203,7 +203,6 @@ public class GameScreen implements Screen {
             }
         }
 
-        // Increase score by 10 every second
         scoreTimer += delta;
         while (scoreTimer >= 1.0f) {
             score += 10;

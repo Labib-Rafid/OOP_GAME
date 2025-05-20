@@ -15,7 +15,7 @@ public class Main extends Game {
         batch = new SpriteBatch();
         camera = new OrthographicCamera();
         camera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        setScreen(new HomeScreen(this)); // start with home page
+        setScreen(new HomeScreen(this));
     }
 
     @Override
